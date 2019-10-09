@@ -18,31 +18,31 @@ aside:
 # 易语言基础
 
 易语言静态编译出的代码在调用库函数时都遵循一个标准：
-```assembly
+~~~nasm
   push xxxxx  ; 一些标识类型的magic value
   push arg    ; 参数
   mov ebx, LibFunction ; 支持库的函数指针
   call CallLibFunc ; 一个编译器优化后的__cdecl，第一个参数是由ebx传递的函数指针
   add esp, 00h ; 调用者清理堆栈
-```
+~~~
 Call Lib Func函数如下
-```cpp
+~~~c
   void* CallLibFunc(void* func, int arg_num, ...)
   {
       va_start(args, arg_num);
       fun(&ret, arg_num, args);
       return ret;
   }
-```
+~~~
 而易语言内的字节集结构如下
-```cpp
+~~~c
   struct
   {
      int magic; //固定前缀，值为1，具体作用不清楚。
      int len;   //数据长度
      char data[]; //数据，一个长度为len的变长数组
   }
-```
+~~~
 知道了这些，在编译出的程序里很容易就能定位到我们想要的函数的位置。
 
 # 外部装饰
@@ -63,7 +63,7 @@ Call Lib Func函数如下
 
 静态编译后依靠特征码定位出函数后，可以看到编译之后的代码。下面是一个去掉无关代码后的实例：
 
-~~~assembly
+~~~nasm
 ; WinMain  proc
 
 ; 加密数据
@@ -359,7 +359,7 @@ static unsigned char pc1[56] = {
 	13,  5, 60, 52, 44, 36, 28, 20, 12,  4, 27, 19, 11,  3 
 };
 ~~~
-~~~asm
+~~~nasm
 sub     esp, 0F4h
 xor     ecx, ecx
 push    ebx
@@ -383,8 +383,6 @@ inc     ecx
 cmp     ecx, 38h ; '8'
 jl      short pc1
 ~~~
-
-
 
 ### C0和D0生成
 
