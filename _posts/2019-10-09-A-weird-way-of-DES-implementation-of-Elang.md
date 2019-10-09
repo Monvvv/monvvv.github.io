@@ -19,29 +19,29 @@ aside:
 
 易语言静态编译出的代码在调用库函数时都遵循一个标准：
 ~~~nasm
-  push xxxxx  ; 一些标识类型的magic value
-  push arg    ; 参数
-  mov ebx, LibFunction ; 支持库的函数指针
-  call CallLibFunc ; 一个编译器优化后的__cdecl，第一个参数是由ebx传递的函数指针
-  add esp, 00h ; 调用者清理堆栈
+push xxxxx  ; 一些标识类型的magic value
+push arg    ; 参数
+mov ebx, LibFunction ; 支持库的函数指针
+call CallLibFunc ; 一个编译器优化后的__cdecl，第一个参数是由ebx传递的函数指针
+add esp, 00h ; 调用者清理堆栈
 ~~~
 Call Lib Func函数如下
 ~~~c
-  void* CallLibFunc(void* func, int arg_num, ...)
-  {
-      va_start(args, arg_num);
-      fun(&ret, arg_num, args);
-      return ret;
-  }
+void* CallLibFunc(void* func, int arg_num, ...)
+{
+    va_start(args, arg_num);
+    fun(&ret, arg_num, args);
+    return ret;
+}
 ~~~
 而易语言内的字节集结构如下
 ~~~c
-  struct
-  {
-     int magic; //固定前缀，值为1，具体作用不清楚。
-     int len;   //数据长度
-     char data[]; //数据，一个长度为len的变长数组
-  }
+struct
+{
+    int magic; //固定前缀，值为1，具体作用不清楚。
+    int len;   //数据长度
+    char data[]; //数据，一个长度为len的变长数组
+}
 ~~~
 知道了这些，在编译出的程序里很容易就能定位到我们想要的函数的位置。
 
@@ -106,7 +106,7 @@ add     esp, 28h
 enum
 {
     DES_Algorithm    = 1,
-	RC4_Algorithm    = 2,
+    RC4_Algorithm    = 2,
 }
 ~~~
 
@@ -119,7 +119,7 @@ enum
 ~~~c
 void __cdecl E_EncryptData_DES(char *ret, int arg_num, char *args)
 {
-	CryptoSelector(ret, args, arg_num, Encryption);
+    CryptoSelector(ret, args, arg_num, Encryption);
 }
 ~~~
 
@@ -167,12 +167,12 @@ struct
 ~~~c
 int __cdecl CryptoSelector(int *ret, CryptoArgs *args, signed int arg_num, bool encrypt)
 {
-	data_ptr = args->data->data;
-	key = args->key;
-	data_len = args->data->len;
-	algorithm_type = DES_Algorithm;
-	if ( arg_num > 2 && args->magic3 == 0x80000301 && args->algorithm == RC4_Algorithm )
-    	algorithm_type = RC4_Algorithm;
+    data_ptr = args->data->data;
+    key = args->key;
+    data_len = args->data->len;
+    algorithm_type = DES_Algorithm;
+    if ( arg_num > 2 && args->magic3 == 0x80000301 && args->algorithm == RC4_Algorithm )
+        algorithm_type = RC4_Algorithm;
     
     // 使用rc4算法，rc4的加密和解密算法是相同的
     if ( algorithm_type != DES_Algorithm )
@@ -191,8 +191,8 @@ int __cdecl CryptoSelector(int *ret, CryptoArgs *args, signed int arg_num, bool 
     }
     
     // DES算法
-	if ( !encrypt )
-	{
+    if ( !encrypt )
+    {
         // DES 解密
         if ( data_len % 8 )                         // DES算法密文一定为8的倍数
             goto MAKE_RESULT;
@@ -202,7 +202,7 @@ int __cdecl CryptoSelector(int *ret, CryptoArgs *args, signed int arg_num, bool 
         // 解密
         DES_Decrypt(buffer, data_len, key);
     }
-	else
+    else
     {
         // DES 加密
         // 补位，保证加密后的密文长度为8的倍数+一个size_t的大小
@@ -223,7 +223,7 @@ int __cdecl CryptoSelector(int *ret, CryptoArgs *args, signed int arg_num, bool 
 
     
 MAKE_RESULT:
-	result = CloneBinData(result_ptr, result_len);
+    result = CloneBinData(result_ptr, result_len);
     *ret = result;
     return result;
 }
@@ -234,14 +234,14 @@ MAKE_RESULT:
 ~~~c
 int __cdecl DES_Encrypt(char *buffer, int len, char *key)
 {
-	return DES(buffer, len, key, Encryption);
+    return DES(buffer, len, key, Encryption);
 }
 ~~~
 
 ~~~c
 int __cdecl DES_Decrypt(char *buf, int len, char *key)
 {
-	return DES(buf, len, key, Decryption);
+    return DES(buf, len, key, Decryption);
 }
 ~~~
 
@@ -306,21 +306,21 @@ DES函数内部和普通的实现差不多，首先生成key，然后8位一组�
 ~~~c
 int __cdecl DES(char *buf, int len, char *key, bool encrypt)
 {
-  	DesUpdateKey(key);                      // 循环xor 将key设置为8bytes长
-  	DesExpandKey(g_des_key, encrypt == 0);  // 生成子秘钥组
+    DesUpdateKey(key);                      // 循环xor 将key设置为8bytes长
+    DesExpandKey(g_des_key, encrypt == 0);  // 生成子秘钥组
                                             // DES算法加密和解密的区别只有子密钥生成顺序不同
-  	if ( len / 8 > 0 )
-  	{
-		v6 = len / 8;
-  	  	do
+    if ( len / 8 > 0 )
+    {
+        v6 = len / 8;
+        do
     	{	
-      		result = DesCipherRaw(buf, buf);           // 循环加密8byte block
-      		buf += 8;
-      		--v6;
+            result = DesCipherRaw(buf, buf);           // 循环加密8byte block
+            buf += 8;
+            --v6;
     	}
-    	while ( v6 );
+        while ( v6 );
   	}
-  	return result;
+    return result;
 }
 ~~~
 在`DesUpdateKey`里会对传入的key循环异或，保存在一个全局变量里，在生成子秘钥的时候使用。由于接受的key长度是任意的，该方法确保了可以获得8bytes的key。
@@ -353,10 +353,10 @@ static unsigned short bytebit[8] = {
     0b00010000, 0b00100000, 0b01000000, 0b10000000,
 };
 static unsigned char pc1[56] = {
-	56, 48, 40, 32, 24, 16,  8,  0, 57, 49, 41, 33, 25, 17,
-	 9,  1, 58, 50, 42, 34, 26, 18, 10,  2, 59, 51, 43, 35,
-	62, 54, 46, 38, 30, 22, 14,  6, 61, 53, 45, 37, 29, 21,
-	13,  5, 60, 52, 44, 36, 28, 20, 12,  4, 27, 19, 11,  3 
+    56, 48, 40, 32, 24, 16,  8,  0, 57, 49, 41, 33, 25, 17,
+    9,  1, 58, 50, 42, 34, 26, 18, 10,  2, 59, 51, 43, 35,
+    62, 54, 46, 38, 30, 22, 14,  6, 61, 53, 45, 37, 29, 21,
+    13,  5, 60, 52, 44, 36, 28, 20, 12,  4, 27, 19, 11,  3 
 };
 ~~~
 ~~~nasm
@@ -393,23 +393,23 @@ jl      short pc1
 # 差异
 DES算法包含了很多预先定义好的置换Table，想要找出变化后的内容不是很容易。不过对比后发现，这个实现里包含的Table都和标准没什么差异,问题在进行key置换时的一句代码：
 ~~~c
-  char v23[56];
-  
-  v2 = 0;
-  do                                            // 读PC1表 密钥置换 去除校验位
-  {
+char v23[56];
+
+v2 = 0;
+do                                            // 读PC1表 密钥置换 去除校验位
+{
     v23[v2] = (*(_BYTE *)((pc1[v2] >> 3) + a1) & bitTable[2 * (pc1[v2] & 7)]) != 0;
     ++v2;
-  }
-  while ( v2 < 56 );
+}
+while ( v2 < 56 );
 ~~~
 这段代码从pc1表里获得第n位对应的置换位，在key里找到并保存到v23里，方式是首先获得int数组的开始位置，再通过掩码表bitTable获得该int具体的某一位。可是，bitTable的定义如下：
 ~~~c
-  unsigned short bitTable[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+unsigned short bitTable[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 ~~~
 在这个表里，如果要获取第0个bit，获得的掩码将是0b00000001，最后一个bit的掩码是0b10000000，顺序颠倒了过来。也就是说获得的1位却会得到最后一位,相当于将key每8个bit都倒转了一次。正确的定义应该是
 ~~~c
-  unsigned short bitTable[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x04, 0x02, 0x01};
+unsigned short bitTable[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x04, 0x02, 0x01};
 ~~~
 # 总结
 关于这个问题到底是一个feature还是BUG，我不能确定，也不知道去哪提交。
