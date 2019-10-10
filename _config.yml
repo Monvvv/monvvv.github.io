@@ -18,6 +18,7 @@
 ##############################
 text_skin: default # "default" (default), "dark", "forest", "ocean", "chocolate", "orange"
 highlight_theme: default # "default" (default), "tomorrow", "tomorrow-night", "tomorrow-night-eighties", "tomorrow-night-blue", "tomorrow-night-bright"
+highlightjs_style: xcode # all styles are in "assets/highlightjs/styles/*.css"
 url     : https://monvvv.github.io # the base hostname & protocol for your site e.g. https://www.someone.com
 baseurl : # does not include hostname
 title   : Ah, I see!
@@ -180,7 +181,7 @@ analytics:
 ## => Build
 ##############################
 markdown    : kramdown
-highlighter : pygments
+highlighter : rouge
 permalink   : date
 
 exclude:
