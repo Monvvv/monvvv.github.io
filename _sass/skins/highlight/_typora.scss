@@ -10,14 +10,15 @@ $highlight-type         : #008855;
 $highlight-keyword      : #770088;
 $highlight-lable        : #117700;
 
-$highlight-buildin      : #3300AA;
+$highlight-buildin      : #0055AA;
 $highlight-title        : #0000FF;
 
 $highlight-string       : #AA1111;
 $highlight-number       : #116644;
-$highlight-operator     : #981A1A;
+$highlight-operator     : #000000;
 
 $highlight-variable     : #981A1A;
+$highlight-namespace    : #000000;
 
 $highlight-defalut      : #ff0000;
 
@@ -68,7 +69,7 @@ pre.lineno {
   .ne  { color: $highlight-defalut; } /* Name.Exception */
   .nf  { color: $highlight-defalut; } /* Name.Function */
   .nl  { color: $highlight-lable; } /* Name.Label */
-  .nn  { color: $highlight-defalut; } /* Name.Namespace */
+  .nn  { color: $highlight-namespace; } /* Name.Namespace */
   .nx  { color: $highlight-defalut; } /* Name.Other */
   .py  { color: $highlight-defalut; } /* Name.Property */
   .nt  { color: $highlight-defalut; } /* Name.Tag */
