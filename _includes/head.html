@@ -14,10 +14,20 @@
 
 {%- include head/favicon.html -%}
 
-<link rel="stylesheet"
-      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/styles/xcode.min.css">
-<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+<!-- load highlightjs -->
+{%- include snippets/prepend-baseurl.html path='/assets/highlightjs/highlight.pack.js' -%}
+<script src="{{ __return }}"></script>
+
+{%- include snippets/prepend-baseurl.html path='/assets/highlightjs/styles/' -%}
+<link rel="stylesheet" href="{{ __return }}{{ site.highlightjs_style}}.css">
+<script>
+// div[class^='highlighter'] for normal code
+document.addEventListener('DOMContentLoaded', (event) => {
+  document.querySelectorAll("div[class^='lang'], div[class^='highlighter']").forEach((block) => {
+    hljs.highlightBlock(block);
+  });
+});
+</script>
 
 
 {%- include snippets/prepend-baseurl.html path='/assets/css/main.css' -%}
