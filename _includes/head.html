@@ -14,12 +14,13 @@
 
 {%- include head/favicon.html -%}
 
+
+{%- include snippets/prepend-baseurl.html path='/assets/css/main.css' -%}
+<link rel="stylesheet" href="{{ __return }}">
+
 <!-- load highlightjs -->
 {%- include snippets/prepend-baseurl.html path='/assets/highlightjs/highlight.pack.js' -%}
 <script src="{{ __return }}"></script>
-
-{%- include snippets/prepend-baseurl.html path='/assets/highlightjs/styles/' -%}
-<link rel="stylesheet" href="{{ __return }}{{ site.highlightjs_style}}.css">
 <script>
 // div[class^='highlighter'] for normal code
 document.addEventListener('DOMContentLoaded', (event) => {
@@ -28,10 +29,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
   });
 });
 </script>
-
-
-{%- include snippets/prepend-baseurl.html path='/assets/css/main.css' -%}
-<link rel="stylesheet" href="{{ __return }}">
 
 {%- include snippets/get-sources.html -%}
 {%- assign _sources = __return -%}
