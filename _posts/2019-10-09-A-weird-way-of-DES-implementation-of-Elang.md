@@ -345,7 +345,7 @@ int* DesUpdateKey(_BYTE* key)
 
 ### PC-1
 
-由于优化，在这一环节并不生成新的。
+这一轮置换很简单，唯一可能复杂一点的可能就是这些位运算。下面`pc1`为置换表1，`bytebit`是获取byte中第n个bit所用的掩码
 
 ~~~c
 static unsigned short bytebit[8] = {
@@ -384,37 +384,77 @@ cmp     ecx, 38h ; '8'
 jl      short pc1
 ~~~
 
-### C0和D0生成
+之所以`pc1[i] >> 3`以及`and bytesbits[n]`是为了获取第n位的key值。一个简单的内存图如下：
+
+|key[0]|key[1]|key[2]| key[3] | key[4] | key[5] | key[6] |key[7] |
+| -------- | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
+| 00000000 | 00000000 | 00000000 | 00000000 | 00000000 | 00000000 |00000000|00000000|
+
+首先整除8获取在key中的offset，然后mod 8获取在key[n]中的bit，将结果保存在`sub_keys`对应的位置上。代码很简单，不过上文中的`bytebit`数组依然有两个明显的问题：
+
+1. 明明只需要一个Byte但类型却是short，过大的类型导致在编译后访问时需要`[eax*2]`。
+2. 不论BE还是LE系统取第一个bit都应该用`0b10000000`而非`0b00000001`，这个数组是反的。
+
+### C~i~和D~i~及K~i~生成
+
+先用根据IDA看一下流程图，下面是简化后的图，可以看到是一个大循环里有三个小循环。大循环会循环16次，可以猜出来是在生产k~1~到k~16~。
+
+```mermaid
+graph TB
+	Block1 --> Block2
+	Block2 --> Block3
+	Block3 --> Block4
+	Block4 --> Block5
+	Block5 --> Block6
+	
+	Block6 -->|Loop4| Block1
+	Block3 -->|Loop1| Block2
+	Block4 -->|Loop2| Block3
+	Block5 -->|Loop3| Block4
+
+```
+
+#### Loop1-生成C~i~
+
+循环28次，大概是在将C~0~进行循环左移。
+
+```c
+static unsigned char shift_table[16] = {1,2,4,6,8,10,12,14,15,17,19,21,23,25,27,28};
+// 这是在第i轮需要循环移动的次数的列表。
+```
+
+```nasm
+; ecx = shift_table[i]，i = loop4轮数。
+start:
+cmp     ecx, 1Ch					; 是否
+jge     short case2
+case1:
+mov     bl, [esp+ecx+104h+sub_keys]	;
+jmp     short end
+
+case2:
+mov     bl, [esp+ecx+104h+var+1Ch]	; 
+
+end:
+mov     [esp+eax+104h+var], bl		; 保存
+inc     eax
+inc     ecx
+cmp     eax, 1Ch					; 0x1C=28
+jl      short start
+```
 
 
 
-除去一些优化的部分外，该实现是一个典型的DES算法的ECB模式，每个加密块之间没有任何联系。
 
-# 差异
-DES算法包含了很多预先定义好的置换Table，想要找出变化后的内容不是很容易。不过对比后发现，这个实现里包含的Table都和标准没什么差异,问题在进行key置换时的一句代码：
-~~~c
-char v23[56];
 
-v2 = 0;
-do                                            // 读PC1表 密钥置换 去除校验位
-{
-    v23[v2] = (*(_BYTE *)((pc1[v2] >> 3) + a1) & bitTable[2 * (pc1[v2] & 7)]) != 0;
-    ++v2;
-}
-while ( v2 < 56 );
-~~~
-这段代码从pc1表里获得第n位对应的置换位，在key里找到并保存到v23里，方式是首先获得int数组的开始位置，再通过掩码表bitTable获得该int具体的某一位。可是，bitTable的定义如下：
-~~~c
-unsigned short bitTable[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-~~~
-在这个表里，如果要获取第0个bit，获得的掩码将是0b00000001，最后一个bit的掩码是0b10000000，顺序颠倒了过来。也就是说获得的1位却会得到最后一位,相当于将key每8个bit都倒转了一次。正确的定义应该是
-~~~c
-unsigned short bitTable[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x04, 0x02, 0x01};
-~~~
+## 总结
+
+DES算法虽然产生秘钥时很繁琐，但是具体思路其实很清楚。而上面的实现除去一些优化的部分外，也是一个典型的DES算法。
+
 # 总结
 关于这个问题到底是一个feature还是BUG，我不能确定，也不知道去哪提交。
 
-不过避免这个问题的方法也很简单，在调用"加/解密数据"或者其他DES函数时将key同样按照上面的方式倒转一次就可以了。比如一个key为01 01 01 01 01 01 01 01，在普通DES里等价于00 00 00 00 00 00 00 00，在加密数据里等价于：80 80 80 80 80 80 80 80。
+不过避免这个问题的方法也很简单，在调用"加/解密数据"或者其他DES函数时将key同样按照上面的方式倒转一次就可以了。
 
 下面是一个简单的python实现，其他语言同理
 ~~~python
