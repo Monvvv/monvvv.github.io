@@ -1,17 +1,24 @@
-# Bypass某游戏的防内存修改机制
+---
+layout: article
+title: 某LuaJIT游戏的Anti-Cheat分析
+lang: zh
+license: CC-BY-NC-4.0
+aside:
+  toc: true
+---
 
-## 前言
+# 前言
 
 这个游戏防修改的方法很平常，但因为是用`LuaJIT`写的引擎，所以不是太直观。所以与其说文章是关于游戏修改，倒不如说是在介绍LuaJIT。另外，由于这游戏有充值系统，所以省略了游戏有关的具体信息。
 
-## 第一次尝试
+# 第一次尝试
 
 打开游戏，随便找一个比较大的数值，打开CE，搜索数值，发现能够搜索到。
 ![image-1](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-1.png)
 ![image-2](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-2.png)
 然后修改之，然后游戏就喜闻乐见的闪退了。
 
-## 分析
+# 分析
 
 重新打开游戏，搜索数值，在数据上按`F5`(或右键单击->`Find out what acess this address`)，能看到有好几条指令在持续不断的访问。
 ![image-3](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-3.png)
@@ -19,7 +26,7 @@
 ![image-4](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-4.png)
 ![image-5](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-5.png)
 
-### Dump & Inject
+## Dump & Inject
 
 于是乎，我们直接将游戏的脚本直接用OD载入，在DLL被载入后输入`bp luaL_loadbuffer`。该函数声明为：
 
@@ -81,7 +88,7 @@ function fk_ce(data)
 end
 ```
 
-### Bytecode
+## Bytecode
 
 目前解析`LuaJIT Bytecode`的工具有三个，分别为：
 
@@ -182,7 +189,7 @@ function __index(t, k)
     end
 end
 ```
-## 问题
+# 问题
 
 根据上面的实现很容易能看出，要绕过判断只要把对应的table`__p`内的数据也修改掉就可以。但事实上，并非这样。
 
@@ -250,11 +257,11 @@ typedef struct GCstr {
 
 所以即使修改了字符串值，但由于字符串是否相等是通过引用对比而非值对比确定的，`a == b`依然为`false`。
 
-## 结束
+# 结束
 
 想要解决这个问题也很简单，只要将`b`的引用修改为`a`的引用，或者直接通过注入的Lua脚本修改(比如将Bytecode第4行的ISEQP删除掉)。
 
-### 测试
+## 测试
 
 搜索`b_str_address - 0x16(sizeof GCstr)`然后将指针改为`b_str_address - 0x16`，输出：`1234567 1234567 true`。
 
@@ -262,7 +269,7 @@ typedef struct GCstr {
 ![image-6](\2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-6.png)
 ![image-7](\2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-7.png)
 
-## 参考
+# 参考
 
 1. [Lua Source](https://www.lua.org/source/5.1/).
 2. [Lua Manual Metatables](https://www.lua.org/manual/5.1/manual.html#2.8)
