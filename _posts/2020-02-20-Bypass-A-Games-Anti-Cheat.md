@@ -14,17 +14,17 @@ aside:
 # 第一次尝试
 
 打开游戏，随便找一个比较大的数值，打开CE，搜索数值，发现能够搜索到。
-![image-1](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-1.png)
-![image-2](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-2.png)
+![image-1](\assets\2020-02-20-Bypass-A-Games-Anti-Cheat\image-1.png)
+![image-2](\assets\2020-02-20-Bypass-A-Games-Anti-Cheat\image-2.png)
 然后修改之，然后游戏就喜闻乐见的闪退了。
 
 # 分析
 
 重新打开游戏，搜索数值，在数据上按`F5`(或右键单击->`Find out what acess this address`)，能看到有好几条指令在持续不断的访问。
-![image-3](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-3.png)
+![image-3](\assets\2020-02-20-Bypass-A-Games-Anti-Cheat\image-3.png)
 点击`Show disassembler`，能看到这几条指令都是属于一个名为`LScript.dll`的DLL文件的。而通过DLL导出的符号可以猜到其是`LuaJIT`库。
-![image-4](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-4.png)
-![image-5](2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-5.png)
+![image-4](\assets\2020-02-20-Bypass-A-Games-Anti-Cheat\image-4.png)
+![image-5](\assets\2020-02-20-Bypass-A-Games-Anti-Cheat\image-5.png)
 
 ## Dump & Inject
 
@@ -266,8 +266,8 @@ typedef struct GCstr {
 搜索`b_str_address - 0x16(sizeof GCstr)`然后将指针改为`b_str_address - 0x16`，输出：`1234567 1234567 true`。
 
 而在游戏内，可以通过将`__p`内的引用改为其他数据的引用来实现将一个数据修改为另一个已存在的数据(0x11327F90内的数据是原先`__p`内的字符串，由于缺少了引用被GC删除了)。
-![image-6](\2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-6.png)
-![image-7](\2020-02-20-Bypass-A-Games-Anti-Cheat.assets\image-7.png)
+![image-6](\assets\2020-02-20-Bypass-A-Games-Anti-Cheat\image-6.png)
+![image-7](\assets\2020-02-20-Bypass-A-Games-Anti-Cheat\image-7.png)
 
 # 参考
 
